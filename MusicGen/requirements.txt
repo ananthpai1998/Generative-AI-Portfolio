@@ -1,0 +1,28 @@
+# Core dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.4.2
+
+# Data handling
+pandas>=2.1.1
+
+# Machine learning
+torch>=2.1.0
+transformers>=4.34.0
+
+# Audio processing
+scipy>=1.11.3
+
+# Web server extras
+starlette>=0.31.1
+python-multipart>=0.0.6
+
+# CORS support
+fastapi-cors>=0.0.6
+
+# Dependency for transformers/tokenizers
+tokenizers>=0.14.1
+accelerate>=0.23.0
+
+# Optional dependency for improved performance
+ninja>=1.11.1

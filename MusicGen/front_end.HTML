@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Synthesizer (Debug)</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --container-bg: #1f1f3a;
+            --input-bg: #2a2a4a;
+            --text-color: #e0e0e0;
+            --primary-color: #a085ff;
+            --border-color: #4a4a6a;
+            --skeleton-bg: #3a3a5a;
+            --skeleton-highlight: #5a5a7a;
+            /* Debug Colors */
+            --debug-red: rgba(255, 0, 0, 0.7);
+            --debug-lime: rgba(0, 255, 0, 0.7);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--container-bg);
+            padding: 30px 40px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: calc(100% - 24px);
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        input[type="number"] {
+             width: calc(60% - 24px);
+             margin-right: 10px;
+        }
+
+        .duration-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .duration-group span {
+            font-size: 0.9em;
+        }
+
+        button#generate-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px auto 0;
+            min-width: 150px;
+        }
+
+        button#generate-btn:hover:not(:disabled) {
+            background-color: #8a6fff;
+        }
+
+        button#generate-btn:disabled {
+            background-color: var(--border-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-area {
+            margin-top: 30px;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed var(--border-color); /* Optional: border on container */
+            padding: 10px;
+            visibility: visible; /* Ensure status area is visible */
+        }
+
+        /* Skeleton Loader */
+        .skeleton-loader {
+            width: 80%;
+            margin: 15px auto;
+        }
+
+        .skeleton-circle {
+            width: 50px;
+            height: 50px;
+            background-color: var(--skeleton-bg);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .skeleton-line {
+            height: 12px;
+            background-color: var(--skeleton-bg);
+            border-radius: 3px;
+            margin-bottom: 10px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .skeleton-line.short { width: 60%; margin: 0 auto 10px; }
+        .skeleton-line.long { width: 90%; margin: 0 auto 10px; }
+
+        @keyframes pulse {
+            0% { background-color: var(--skeleton-bg); }
+            50% { background-color: var(--skeleton-highlight); }
+            100% { background-color: var(--skeleton-bg); }
+        }
+
+        #status-message {
+            margin-top: 10px;
+            font-size: 1em;
+            color: var(--text-color);
+            min-height: 20px; /* Ensure space for text */
+        }
+
+         /* Style the container for the audio player */
+         #audio-player-area {
+             display: block; /* Make sure it's a block */
+             visibility: visible; /* Make sure it's visible */
+             width: 100%; /* Ensure it takes width */
+             margin-top: 15px;
+             padding: 5px;
+             /* --- TEMPORARY DEBUG BORDER --- */
+             /* border: 2px solid var(--debug-red) !important; */ /* Comment/Uncomment this line */
+             min-height: 50px; /* Ensure container has height for border */
+         }
+
+         /* Style the actual audio player */
+         #audio-player-area audio {
+             display: block; /* Make sure it renders as a block */
+             visibility: visible; /* Make sure it's visible */
+             opacity: 1; /* Make sure it's not transparent */
+             width: 90%; /* Responsive width */
+             max-width: 450px; /* Max width */
+             margin: 5px auto; /* Center horizontally */
+             /* --- TEMPORARY DEBUG BORDER --- */
+             /* border: 2px solid var(--debug-lime) !important; */ /* Comment/Uncomment this line */
+         }
+
+        .hidden {
+            display: none !important; /* Use important to override conflicting styles if needed */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Music Synthesizer</h2>
+
+        <div class="form-group">
+            <label for="prompt">Music Generator Prompt</label>
+            <input type="text" id="prompt" name="prompt" value="A funky groovy electronic beat with a catchy synth melody">
+        </div>
+
+        <div class="form-group">
+            <label for="duration">Duration</label>
+            <div class="duration-group">
+                <input type="number" id="duration" name="duration" value="10" min="1" max="30">
+                <span>secs</span>
+            </div>
+        </div>
+
+        <button id="generate-btn">
+            <span id="btn-text">Generate</span>
+            <div id="btn-spinner" class="spinner hidden"></div>
+        </button>
+
+        <div class="status-area">
+            <div id="skeleton" class="skeleton-loader hidden">
+                <div class="skeleton-circle"></div>
+                <div class="skeleton-line long"></div>
+                <div class="skeleton-line short"></div>
+            </div>
+            <div id="status-message">Enter a prompt and duration, then click Generate.</div>
+            <div id="audio-player-area"></div> </div>
+    </div>
+
+    <script>
+        // --- Configuration, DOM References (Keep as before) ---
+        const API_BASE_URL = "http://localhost:8000"; // !!! IMPORTANT: Change this to your backend server URL
+        const GENERATE_ENDPOINT = `${API_BASE_URL}/generate-music`;
+        const STATUS_ENDPOINT_PREFIX = `${API_BASE_URL}/generated_music/`;
+        const SECURITY_TOKEN = "test_Sec__123token_random_123"; // Should match your backend token
+        const POLLING_INTERVAL_MS = 3000; // Check status every 3 seconds
+
+        const promptInput = document.getElementById('prompt');
+        const durationInput = document.getElementById('duration');
+        const generateBtn = document.getElementById('generate-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const statusMessage = document.getElementById('status-message');
+        const skeletonLoader = document.getElementById('skeleton');
+        const audioPlayerArea = document.getElementById('audio-player-area');
+
+        let pollingIntervalId = null;
+
+        // --- Functions ---
+
+        function showLoading(isLoading, message = "") {
+            const statusArea = document.querySelector('.status-area');
+            if (isLoading) {
+                // SETTING LOADING STATE
+                generateBtn.disabled = true;
+                btnText.textContent = "Generating..."; // Change button text
+                btnSpinner.classList.remove('hidden'); // Show spinner
+                skeletonLoader.classList.remove('hidden');
+                audioPlayerArea.innerHTML = '';
+                audioPlayerArea.style.border = 'none';
+                statusMessage.textContent = message || "Your request is in the works! Sit tight...";
+                 if (statusArea) statusArea.style.visibility = 'visible';
+            } else {
+                // RESETTING TO NORMAL STATE
+                generateBtn.disabled = false; // Re-enable button
+                btnText.textContent = "Generate"; // Reset button text
+                btnSpinner.classList.add('hidden'); // Hide spinner
+                // Note: Skeleton hiding is handled by displayAudio/displayError now
+            }
+        }
+
+        function displayError(message) {
+            console.error("Error:", message);
+            statusMessage.textContent = `Error: ${message}`;
+            audioPlayerArea.innerHTML = '';
+            audioPlayerArea.style.border = 'none';
+            skeletonLoader.classList.add('hidden');
+            showLoading(false); // Call this to reset button on error
+            if (pollingIntervalId) {
+                clearInterval(pollingIntervalId);
+                pollingIntervalId = null;
+            }
+             const statusArea = document.querySelector('.status-area');
+             if (statusArea) statusArea.style.visibility = 'visible';
+        }
+
+
+        function displayAudio(base64Audio) {
+             console.log("Attempting to display audio...");
+             if (!base64Audio || base64Audio.length < 50) {
+                 console.error("displayAudio called with invalid or empty base64Audio data. Length:", base64Audio ? base64Audio.length : 'null');
+                 // Don't call displayError here, let pollStatus handle it if needed, but DO reset button
+                 statusMessage.textContent = "Error: Received completed status but audio data seems invalid.";
+                 skeletonLoader.classList.add('hidden'); // Hide skeleton
+                 showLoading(false); // Reset button even if audio data is bad
+                 return;
+             }
+             try {
+                 // ... (Create audio element as before) ...
+                 console.log("Base64 data received (first 50 chars):", base64Audio.substring(0, 50));
+                 const audio = document.createElement('audio');
+                 audio.controls = true;
+                 audio.src = `data:audio/wav;base64,${base64Audio}`;
+                 console.log("Created audio element with src:", audio.src.substring(0, 70) + "...");
+
+                 audioPlayerArea.innerHTML = '';
+                 audioPlayerArea.style.visibility = 'visible';
+                 audioPlayerArea.style.display = 'block';
+                 // audioPlayerArea.style.border = '2px solid var(--debug-red)'; // Keep debug border if needed
+
+                 console.log("Cleared audioPlayerArea. Appending audio element...");
+                 audioPlayerArea.appendChild(audio);
+                 console.log("Audio element appended successfully.");
+
+                 const statusArea = document.querySelector('.status-area');
+                 if (statusArea) {
+                     statusArea.style.visibility = 'visible';
+                     statusArea.style.display = 'flex';
+                 }
+
+                 skeletonLoader.classList.add('hidden');
+                 statusMessage.textContent = "Generation complete!";
+
+                 // **** THIS IS THE FIX ****
+                 // Reset the button state AFTER audio is displayed successfully
+                 showLoading(false);
+                 // *************************
+
+                 // Final check using getComputedStyle (keep for debugging if needed)
+                 setTimeout(() => { /* ... computed style logging ... */ }, 100);
+
+             } catch (error) {
+                 console.error("Error in displayAudio function:", error);
+                 // Don't call displayError to avoid duplicate messages, just log and reset button
+                 statusMessage.textContent = `Error: Failed to display audio player. ${error}`;
+                 skeletonLoader.classList.add('hidden');
+                 showLoading(false); // Reset button on display error
+             }
+        }
+
+
+        async function pollStatus(requestId) {
+            console.log("Polling status for request ID:", requestId);
+            const statusUrl = `${STATUS_ENDPOINT_PREFIX}${requestId}`;
+
+            if (pollingIntervalId) { clearInterval(pollingIntervalId); }
+
+            pollingIntervalId = setInterval(async () => {
+                console.log(`Polling check for ${requestId}...`);
+                try {
+                    const response = await fetch(statusUrl);
+                     // ... (fetch error handling as before) ...
+                    if (!response.ok) {
+                         let errorMsg = `HTTP error! Status: ${response.status}`;
+                         try { /* ... get error detail ... */ } catch(e) { /* Ignore */ }
+                         if (response.status === 404 || response.status === 500) {
+                             throw new Error(errorMsg + " Stopping polling."); // This will trigger displayError via catch block
+                         } else { /* ... handle non-fatal ... */ return; }
+                     }
+
+                    const result = await response.json();
+                     console.log("Poll Status Response:", JSON.stringify(result, null, 2));
+
+                    if (result.is_success === true) {
+                         console.log("Processing 'completed' status...");
+                         clearInterval(pollingIntervalId); // Stop polling
+                         pollingIntervalId = null;
+                         // ----> REMOVED showLoading(false) from here <----
+
+                         if (result.generated_data && result.generated_data.length > 0) {
+                             console.log("Calling displayAudio with received data.");
+                             displayAudio(result.generated_data); // displayAudio now handles resetting the button
+                         } else {
+                             console.error("Status is success, but 'generated_data' is missing or empty in the response.");
+                             displayError("Generation completed, but audio data is missing from the server response."); // Reset button via displayError
+                         }
+                    } else if (result.message && result.message.toLowerCase().includes("queued")) {
+                         statusMessage.textContent = `Queued. Position: ${result.queue_position || 'N/A'}. Checking again...`;
+                         console.log("Status: Queued");
+                         skeletonLoader.classList.remove('hidden'); // Keep skeleton visible
+                    } else if (result.message && result.message.toLowerCase().includes("processing")) {
+                         statusMessage.textContent = "Processing your request... Please wait.";
+                         console.log("Status: Processing");
+                         skeletonLoader.classList.remove('hidden'); // Keep skeleton visible
+                    } else if (result.message && result.message.toLowerCase().includes("failed")) {
+                         console.error("Received 'failed' status from server.");
+                         clearInterval(pollingIntervalId);
+                         pollingIntervalId = null;
+                         displayError("Music generation failed on the server."); // Reset button via displayError
+                    } else {
+                         console.warn("Unknown status message received:", result.message);
+                         statusMessage.textContent = `Status: ${result.message || 'Waiting for update...'}`;
+                         skeletonLoader.classList.remove('hidden'); // Keep skeleton visible
+                    }
+
+                } catch (error) { // Catch block for fetch errors or errors thrown above
+                    console.error("Error during polling:", error);
+                     if (pollingIntervalId) { // Check interval exists before clearing again
+                         displayError(`Error checking status: ${error.message}`);
+                     }
+                }
+            }, POLLING_INTERVAL_MS);
+        }
+
+        // --- submitGenerationRequest (Keep as before) ---
+        async function submitGenerationRequest() {
+            console.log("Submit generation request initiated.");
+            const prompt = promptInput.value.trim();
+            const duration = parseInt(durationInput.value, 10);
+
+            if (!prompt) {
+                displayError("Music generation prompt cannot be empty.");
+                return;
+            }
+            if (isNaN(duration) || duration < 1 || duration > 30) {
+                 displayError("Duration must be a number between 1 and 30.");
+                 return;
+            }
+
+            showLoading(true, "Submitting request..."); // Set button to loading state
+
+            const requestBody = {
+                security_token: SECURITY_TOKEN,
+                music_generation_condition: prompt,
+                duration: duration
+            };
+             console.log("Submitting POST request to:", GENERATE_ENDPOINT, "with body:", JSON.stringify(requestBody));
+
+            try {
+                const response = await fetch(GENERATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+                 console.log("Generation Request Raw Response:", {status: response.status, body: result});
+
+                if (!response.ok) {
+                     const errorDetail = result.detail || result.message || `HTTP error! Status: ${response.status}`;
+                    throw new Error(errorDetail);
+                }
+
+                if (result.is_success && result.request_id) {
+                    console.log("Request submitted successfully. Request ID:", result.request_id);
+                    statusMessage.textContent = "Request submitted! Waiting for queue...";
+                    pollStatus(result.request_id); // Start polling
+                } else {
+                    // Handle cases where backend indicates failure immediately in a 200 OK response
+                    throw new Error(result.message || "Submission failed: Check backend response.");
+                }
+
+            } catch (error) {
+                 console.error("Error submitting generation request:", error);
+                 displayError(`Submission failed: ${error.message}`); // displayError resets button
+            }
+        }
+
+        // --- Event Listeners ---
+        generateBtn.addEventListener('click', submitGenerationRequest);
+        console.log("Music Synthesizer UI Initialized.");
+
+    </script>
+</body>
+</html>
